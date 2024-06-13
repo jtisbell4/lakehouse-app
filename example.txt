@@ -1,0 +1,1 @@
+Compute the number of customers who watched more than 50 minutes of video this month.
