@@ -4,6 +4,7 @@ from databricks.vector_search.client import VectorSearchClient
 from langchain_community.chat_models import ChatDatabricks
 from langchain_community.vectorstores import DatabricksVectorSearch
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -108,6 +109,8 @@ model = ChatDatabricks(
     endpoint=LLM_ENDPOINT,
     extra_params=LLM_PARAMS,
 )
+
+# model = ChatOpenAI(streaming=True)
 
 ############
 # RAG Chain

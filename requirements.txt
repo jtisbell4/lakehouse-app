@@ -4,3 +4,4 @@ databricks-sdk
 langchain
 langchain-community
 databricks-vectorsearch
+langchain_openai
