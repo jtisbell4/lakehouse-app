@@ -1,6 +1,6 @@
 openai
 chainlit
 databricks-sdk
-databricks-sql-connector[sqlalchemy]
-aiohttp
-asyncpg
+langchain
+langchain-community
+databricks-vectorsearch
