@@ -1,37 +1,28 @@
 from operator import itemgetter
+from typing import List
 
 from databricks.vector_search.client import VectorSearchClient
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.chat_models import ChatDatabricks
 from langchain_community.vectorstores import DatabricksVectorSearch
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_openai import ChatOpenAI
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-    PromptTemplate,
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import (
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
 )
-from langchain_core.runnables import RunnableBranch, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 VECTOR_SEARCH_ENDPOINT = "dbdemos_vs_endpoint"
 VECTOR_SEARCH_INDEX = "field_demos.ssc_rag_chatbot.databricks_documentation_vs_index"
 LLM_ENDPOINT = "databricks-dbrx-instruct"
 
-SYSTEM_PROMPT = """You are an assistant that answers questions. Use the following pieces of retrieved context to answer the question. Some pieces of context may be irrelevant, in which case you should not use them to form the answer.
-
-Context: {context}""".strip()
 LLM_PARAMS = {"temperature": 0.01, "max_tokens": 1500}
 
-
-# Return the string contents of the most recent message from the user
-def extract_user_query_string(chat_messages_array):
-    return chat_messages_array[-1]["content"]
-
-
-# Return the chat history, which is is everything before the last question
-def extract_chat_history(chat_messages_array):
-    return chat_messages_array[:-1]
-
+STORE = {}
 
 vs_client = VectorSearchClient(disable_notice=True)
 vs_index = vs_client.get_index(
@@ -46,116 +37,75 @@ vector_search_as_retriever = DatabricksVectorSearch(
 ).as_retriever(search_kwargs={"k": 3})
 
 
-def format_context(docs):
-    chunk_template = "Passage: {chunk_text}\n"
-    chunk_contents = [
-        chunk_template.format(
-            chunk_text=d.page_content,
-            document_uri=d.metadata["url"],
-        )
-        for d in docs
-    ]
-    return "".join(chunk_contents)
-
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (  # System prompt contains the instructions
-            "system",
-            SYSTEM_PROMPT,
-        ),
-        # If there is history, provide it.
-        # Note: This chain does not compress the history, so very long converastions can overflow the context window.
-        MessagesPlaceholder(variable_name="formatted_chat_history"),
-        # User's most current question
-        ("user", "{question}"),
-    ]
-)
-
-
-# Format the converastion history to fit into the prompt template above.
-def format_chat_history_for_prompt(chat_messages_array):
-    history = extract_chat_history(chat_messages_array)
-    formatted_chat_history = []
-    if len(history) > 0:
-        for chat_message in history:
-            if chat_message["role"] == "user":
-                formatted_chat_history.append(
-                    HumanMessage(content=chat_message["content"])
-                )
-            elif chat_message["role"] == "assistant":
-                formatted_chat_history.append(
-                    AIMessage(content=chat_message["content"])
-                )
-    return formatted_chat_history
-
-
-query_rewrite_template = """Based on the chat history below, we want you to generate a query for an external data source to retrieve relevant documents so that we can better answer the question. The query should be in natural language. The external data source uses similarity search to search for relevant documents in a vector space. So the query should be similar to the relevant documents semantically. Answer with only the query. Do not add explanation.
-
-Chat history: {chat_history}
-
-Question: {question}"""
-
-query_rewrite_prompt = PromptTemplate(
-    template=query_rewrite_template,
-    input_variables=["chat_history", "question"],
-)
-
-
-############
-# FM for generation
-############
 model = ChatDatabricks(
     endpoint=LLM_ENDPOINT,
     extra_params=LLM_PARAMS,
 )
 
-# model = ChatOpenAI(streaming=True)
 
-############
-# RAG Chain
-############
-chain = (
+retriever: RunnableParallel = RunnableParallel(
     {
-        "question": itemgetter("messages") | RunnableLambda(extract_user_query_string),
-        "chat_history": itemgetter("messages") | RunnableLambda(extract_chat_history),
-        "formatted_chat_history": itemgetter("messages")
-        | RunnableLambda(format_chat_history_for_prompt),
+        "docs": itemgetter("input")
+        # | RunnableLambda(retrieve_preprocess)
+        | vector_search_as_retriever,
+        "question": RunnablePassthrough(),
+        "history": itemgetter("history"),
     }
-    | RunnablePassthrough()
-    | {
-        "context": RunnableBranch(  # Only re-write the question if there is a chat history
-            (
-                lambda x: len(x["chat_history"]) > 0,
-                query_rewrite_prompt | model | StrOutputParser(),
-            ),
-            itemgetter("question"),
-        )
-        | vector_search_as_retriever
-        | RunnableLambda(format_context),
-        "formatted_chat_history": itemgetter("formatted_chat_history"),
-        "question": itemgetter("question"),
-    }
-    | prompt
-    | model
-    | StrOutputParser()
 )
 
-input_example = {
-    "messages": [
-        {
-            "role": "user",
-            "content": "User's first question",
-        },
-        {
-            "role": "assistant",
-            "content": "Assistant's reply",
-        },
-        {
-            "role": "user",
-            "content": "User's next question",
-        },
-    ]
-}
 
-# chain.invoke(input_example)
+def format_docs(docs: List[Document]) -> str:
+    """Convert Documents to a single string.:"""
+    formatted = [
+        f"Doc URL: {doc.metadata['url']}\nDoc Snippet: {doc.page_content}</context>"
+        for doc in docs
+    ]
+    return "\n\n" + "\n\n".join(formatted)
+
+
+human_template = """Answer the question based only on the following context:
+{context}
+
+Question: {question}
+"""
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a helpful assistant. Answer all questions to the best of your ability.",
+        ),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", human_template),
+    ]
+)
+
+format = itemgetter("docs") | RunnableLambda(format_docs)
+# subchain for generating an answer once we've done retrieval
+answer = prompt | model | StrOutputParser()
+
+
+def parse_output(output: dict):
+    return output["answer"]  # + format_docs(output['docs'])
+
+
+# complete chain that calls wiki -> formats docs to string -> runs answer subchain -> returns just the answer and retrieved docs.
+chain = (
+    retriever.assign(context=format)
+    .assign(answer=answer)
+    .pick(["answer", "context"])  # | RunnableLambda(parse_output)
+)
+
+
+def get_session_history(session_id: str) -> BaseChatMessageHistory:
+    if session_id not in STORE:
+        STORE[session_id] = ChatMessageHistory()
+    return STORE[session_id]
+
+
+with_message_history = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history",
+)
