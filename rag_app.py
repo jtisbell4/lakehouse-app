@@ -1,15 +1,32 @@
 from typing import Dict, List
 
 import chainlit as cl
-from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
-from numpy import source
+from langchain_community.chat_models import ChatDatabricks
 
-from chain import with_message_history
+from chain import load_chain
+
+LLM_PARAMS = {"temperature": 0.01, "max_tokens": 1500}
 
 welcome_message = """
     Welcome to Taylor's Lakehouse Apps demo! Ask anything about
     documents you vectorized and stored in your Databricks Vector Search Index.
 """
+
+
+@cl.set_chat_profiles
+async def chat_profile():
+    return [
+        cl.ChatProfile(
+            name="databricks-dbrx-instruct",
+            markdown_description="The underlying LLM model is **DBRX**.",
+            icon="https://picsum.photos/200",
+        ),
+        cl.ChatProfile(
+            name="databricks-meta-llama-3-70b-instruct",
+            markdown_description="The underlying LLM model is **Llama3 70B**.",
+            icon="https://picsum.photos/250",
+        ),
+    ]
 
 
 def string_to_dict_list(formatted_string: str) -> List[Dict[str, str]]:
@@ -29,6 +46,14 @@ def string_to_dict_list(formatted_string: str) -> List[Dict[str, str]]:
 async def start():
     await cl.Message(content=welcome_message).send()
 
+    chat_profile = cl.user_session.get("chat_profile")
+
+    model = ChatDatabricks(
+        endpoint=chat_profile,
+        extra_params=LLM_PARAMS,
+    )
+
+    with_message_history = load_chain(model)
     # chain = chain | StrOutputParser()
     cl.user_session.set("chain", with_message_history)
     cl.user_session.set("config", {"configurable": {"session_id": "unused"}})
