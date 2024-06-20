@@ -19,12 +19,12 @@ async def chat_profile():
         cl.ChatProfile(
             name="databricks-dbrx-instruct",
             markdown_description="The underlying LLM model is **DBRX**.",
-            icon="https://picsum.photos/200",
+            icon="https://media.istockphoto.com/id/678720240/vector/cute-cartoon-green-t-rex.jpg?s=2048x2048&w=is&k=20&c=bLXkBw_KagXGarKxyb0MWeSQCfaOz9wZHLvemAPQriQ=",
         ),
         cl.ChatProfile(
             name="databricks-meta-llama-3-70b-instruct",
             markdown_description="The underlying LLM model is **Llama3 70B**.",
-            icon="https://picsum.photos/250",
+            icon="https://media.istockphoto.com/id/1201041782/photo/alpaca.jpg?s=612x612&w=0&k=20&c=aHFfLZMuyEyyiJux4OghXfdcc40Oa6L7_cE0D7zvbtY=",
         ),
     ]
 
