@@ -5,11 +5,11 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.memory import ChatMessageHistory
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import StrOutputParser
-from langchain.schema.runnable import Runnable, RunnableConfig, RunnablePassthrough
+from langchain.schema.runnable import RunnableConfig, RunnablePassthrough
 from langchain_community.chat_models import ChatDatabricks
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
-from chain import vector_search_as_retriever
+from vector_search import vector_search_as_retriever
 
 LLM_PARAMS = {"temperature": 0.01, "max_tokens": 1500}
 
@@ -87,7 +87,7 @@ async def on_chat_start():
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    runnable = cl.user_session.get("runnable")  # type: Runnable
+    runnable = cl.user_session.get("runnable")
     msg = cl.Message(content="")
 
     class PostMessageHandler(BaseCallbackHandler):
@@ -119,12 +119,6 @@ async def on_message(message: cl.Message):
                 for url, content in self.sources:
                     el = cl.Text(name=url, content=content, display="inline")
                     self.msg.elements.append(el)
-                    # sources_text = "\n".join(
-                    #     [f"{source}#page={page}" for source, page in self.sources]
-                    # )
-                    # self.msg.elements.append(
-                    #     cl.Text(name="Sources", content=sources_text, display="inline")
-                    # )
 
     async for chunk in runnable.astream(
         {"input": message.content},
