@@ -5,6 +5,7 @@ import time
 import numpy as np  # for nice rendering
 import pandas as pd  # for nice rendering
 import requests
+from databricks.sdk.runtime import *
 
 host = (
     dbutils.notebook.entry_point.getDbutils()
