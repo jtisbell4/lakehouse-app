@@ -1,11 +1,20 @@
+import os
+
 from databricks.vector_search.client import VectorSearchClient
 from langchain_community.vectorstores import DatabricksVectorSearch
 
 VECTOR_SEARCH_ENDPOINT = "dbdemos_vs_endpoint"
 VECTOR_SEARCH_INDEX = "field_demos.ssc_rag_chatbot.databricks_documentation_vs_index"
 
+CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
 
-vs_client = VectorSearchClient(disable_notice=True)
+
+vs_client = VectorSearchClient(
+    disable_notice=True,
+    service_principal_client_id=CLIENT_ID,
+    service_principal_client_secret=CLIENT_SECRET,
+)
 vs_index = vs_client.get_index(
     endpoint_name=VECTOR_SEARCH_ENDPOINT,
     index_name=VECTOR_SEARCH_INDEX,
