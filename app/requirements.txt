@@ -3,3 +3,4 @@ chainlit
 databricks-sdk
 langchain
 databricks-vectorsearch
+langchain_community

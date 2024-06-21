@@ -1,9 +1,9 @@
 # Databricks notebook source
-from lakehouse_app_helpers import list, create, delete, deploy, details
+import lakehouse_app_helpers as helpers
 
 # COMMAND ----------
 
-list()
+helpers.list()
 
 # COMMAND ----------
 
@@ -23,19 +23,20 @@ list()
 
 # COMMAND ----------
 
-app_name = "taylors-dbrx-chat-app"
+app_name = "taylors-chainlit-app"
 
 # COMMAND ----------
 
-create(app_name=app_name)
+helpers.create(app_name=app_name)
+# helpers.delete(app_name=app_name)
 
 # COMMAND ----------
 
-details(app_name=app_name)
+helpers.details(app_name=app_name)
 
 # COMMAND ----------
 
-deploy(app_name=app_name, source_code_path="/Workspace/Users/taylor.isbell@databricks.com/lakehouse-app/app")
+helpers.deploy(app_name=app_name, source_code_path="/Workspace/Users/taylor.isbell@databricks.com/lakehouse-app/app")
 
 # COMMAND ----------
 
