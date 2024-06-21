@@ -13,6 +13,7 @@ WORKSPACE_URL = os.environ.get("DATABRICKS_HOST")
 
 vs_client = VectorSearchClient(
     disable_notice=True,
+    workspace_url=WORKSPACE_URL,
     service_principal_client_id=CLIENT_ID,
     service_principal_client_secret=CLIENT_SECRET,
 )
