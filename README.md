@@ -3,6 +3,7 @@
 Are you tired of putting in a ton of effort on your RAG application only to be left with a mediocre Gradio app (or worse, just a regular ole notebook!) to show off all your hard work... Me too!
 
 That's why I created this repo. With Lakehouse Apps and Chainlit, it's easy to:
+* Stream responses
 * Maintain session history for a better chat experience
 * Visualize steps taken in your chain
 * Get cited sources
