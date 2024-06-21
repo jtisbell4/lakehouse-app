@@ -1,9 +1,13 @@
+from operator import itemgetter
+
 import chainlit as cl
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.prompts import ChatPromptTemplate
+from langchain.memory import ChatMessageHistory
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable, RunnableConfig, RunnablePassthrough
 from langchain_community.chat_models import ChatDatabricks
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from chain import vector_search_as_retriever
 
@@ -30,13 +34,23 @@ async def chat_profile():
 async def on_chat_start():
     chat_profile = cl.user_session.get("chat_profile")
 
-    template = """Answer the question based only on the following context:
+    human_input = """Given the following context answer the question below:
 
     {context}
 
     Question: {question}
     """
-    prompt = ChatPromptTemplate.from_template(template)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a helpful assistant. Below is a transcript of the current conversation between you and the person you are assisting, followed by a question and some relevant information for answering that question. When answering the question, you should pay attention to the relevant info first and foremost. However do not forget to review the history of the conversation in case there is helpful information there too.",
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", human_input),
+        ]
+    )
 
     retriever = vector_search_as_retriever
 
@@ -48,14 +62,27 @@ async def on_chat_start():
     def format_docs(docs):
         return "\n\n".join([d.page_content for d in docs])
 
-    runnable = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    chain = (
+        {
+            "context": itemgetter("input") | retriever | format_docs,
+            "question": RunnablePassthrough(),
+            "chat_history": itemgetter("chat_history"),
+        }
         | prompt
         | model
         | StrOutputParser()
     )
 
-    cl.user_session.set("runnable", runnable)
+    demo_ephemeral_chat_history_for_chain = ChatMessageHistory()
+
+    chain_with_message_history = RunnableWithMessageHistory(
+        chain,
+        lambda session_id: demo_ephemeral_chat_history_for_chain,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+    )
+
+    cl.user_session.set("runnable", chain_with_message_history)
 
 
 @cl.on_message
@@ -100,11 +127,18 @@ async def on_message(message: cl.Message):
                     # )
 
     async for chunk in runnable.astream(
-        message.content,
-        config=RunnableConfig(
-            callbacks=[cl.LangchainCallbackHandler(), PostMessageHandler(msg)]
+        {"input": message.content},
+        RunnableConfig(
+            {"configurable": {"session_id": "unused"}},
+            callbacks=[cl.LangchainCallbackHandler(), PostMessageHandler(msg)],
         ),
     ):
         await msg.stream_token(chunk)
 
     await msg.send()
+
+
+if __name__ == "__main__":
+    from chainlit.cli import run_chainlit
+
+    run_chainlit(__file__)
