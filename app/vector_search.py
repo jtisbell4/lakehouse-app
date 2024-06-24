@@ -13,7 +13,9 @@ CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
 #     if os.environ.get("DATABRICKS_HOST")
 #     else None
 # )
-WORKSPACE_URL = os.environ.get("DATABRICKS_HOST")
+WORKSPACE_URL = os.environ["DATABRICKS_HOST"]
+if not WORKSPACE_URL.startswith("https://"):
+    WORKSPACE_URL = "https://" + WORKSPACE_URL
 DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
 
 
