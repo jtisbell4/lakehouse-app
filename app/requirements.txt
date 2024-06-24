@@ -1,6 +1,6 @@
 git+https://github.com/mlflow/mlflow.git
-chainlit
-databricks-sdk
-langchain
-databricks-vectorsearch
-langchain_community
+chainlit==1.1.202
+databricks-sdk==0.28.0
+langchain==0.2.3
+databricks-vectorsearch==0.38
+langchain_community==0.2.4

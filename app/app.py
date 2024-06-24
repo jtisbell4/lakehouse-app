@@ -12,6 +12,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from vector_search import vector_search_as_retriever
 
 LLM_PARAMS = {"temperature": 0.01, "max_tokens": 1500}
+CHATBOT_NAME = "Botty McBotface"
 
 
 @cl.set_chat_profiles
@@ -33,6 +34,12 @@ async def chat_profile():
 @cl.on_chat_start
 async def on_chat_start():
     chat_profile = cl.user_session.get("chat_profile")
+
+    await cl.Avatar(
+        name=CHATBOT_NAME,
+        # url="https://avatars.githubusercontent.com/u/128686189?s=400&u=a1d1553023f8ea0921fba0debbe92a8c5f840dd9&v=4",
+        path="./public/avatars/assistant.png"
+    ).send()
 
     human_input = """Given the following context answer the question below:
 
@@ -88,7 +95,7 @@ async def on_chat_start():
 @cl.on_message
 async def on_message(message: cl.Message):
     runnable = cl.user_session.get("runnable")
-    msg = cl.Message(content="")
+    msg = cl.Message(content="", author=CHATBOT_NAME)
 
     class PostMessageHandler(BaseCallbackHandler):
         """
@@ -129,7 +136,7 @@ async def on_message(message: cl.Message):
     ):
         await msg.stream_token(chunk)
 
-    await msg.send()
+    await msg.update()
 
 
 if __name__ == "__main__":

@@ -8,16 +8,19 @@ VECTOR_SEARCH_INDEX = "field_demos.ssc_rag_chatbot.databricks_documentation_vs_i
 
 CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
-WORKSPACE_URL = (
-    "https://" + os.environ.get("DATABRICKS_HOST")
-    if os.environ.get("DATABRICKS_HOST")
-    else None
-)
+# WORKSPACE_URL = (
+#     "https://" + os.environ.get("DATABRICKS_HOST")
+#     if os.environ.get("DATABRICKS_HOST")
+#     else None
+# )
+WORKSPACE_URL = os.environ.get("DATABRICKS_HOST")
+DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
 
 
 vs_client = VectorSearchClient(
     disable_notice=True,
     workspace_url=WORKSPACE_URL,
+    personal_access_token=DATABRICKS_TOKEN,
     service_principal_client_id=CLIENT_ID,
     service_principal_client_secret=CLIENT_SECRET,
 )
