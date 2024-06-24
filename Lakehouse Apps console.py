@@ -23,7 +23,7 @@ helpers.list()
 
 # COMMAND ----------
 
-app_name = "taylors-chainlit-app"
+app_name = "taylors-chainlit-app-2"
 
 # COMMAND ----------
 

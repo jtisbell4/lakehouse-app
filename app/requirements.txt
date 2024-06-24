@@ -1,4 +1,4 @@
-openai
+git+https://github.com/mlflow/mlflow.git
 chainlit
 databricks-sdk
 langchain
