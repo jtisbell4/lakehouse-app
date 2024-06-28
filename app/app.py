@@ -12,7 +12,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from vector_search import vector_search_as_retriever
 
 LLM_PARAMS = {"temperature": 0.01, "max_tokens": 1500}
-CHATBOT_NAME = "Botty McBotface"
+CHATBOT_NAME = "Taylor's Assistant"
 
 
 @cl.set_chat_profiles
@@ -40,6 +40,8 @@ async def on_chat_start():
         # url="https://avatars.githubusercontent.com/u/128686189?s=400&u=a1d1553023f8ea0921fba0debbe92a8c5f840dd9&v=4",
         path="./public/avatars/assistant.png"
     ).send()
+
+    await cl.Message(content="Hi, I'm " + CHATBOT_NAME + " feel free to ask me anything about Databricks!", author=CHATBOT_NAME).send()
 
     human_input = """Given the following context answer the question below:
 

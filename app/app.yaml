@@ -1,0 +1,10 @@
+command: [
+  "chainlit", 
+  "run",
+  "app.py"
+]
+env:
+  - name: "VECTOR_SEARCH_ENDPOINT"
+    value: "dbdemos_vs_endpoint"
+  - name: "VECTOR_SEARCH_INDEX"
+    value: "field_demos.ssc_rag_chatbot.databricks_documentation_vs_index"

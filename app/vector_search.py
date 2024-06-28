@@ -3,21 +3,16 @@ import os
 from databricks.vector_search.client import VectorSearchClient
 from langchain_community.vectorstores import DatabricksVectorSearch
 
-VECTOR_SEARCH_ENDPOINT = "dbdemos_vs_endpoint"
-VECTOR_SEARCH_INDEX = "field_demos.ssc_rag_chatbot.databricks_documentation_vs_index"
-
-CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
-# WORKSPACE_URL = (
-#     "https://" + os.environ.get("DATABRICKS_HOST")
-#     if os.environ.get("DATABRICKS_HOST")
-#     else None
-# )
 WORKSPACE_URL = os.environ["DATABRICKS_HOST"]
 if not WORKSPACE_URL.startswith("https://"):
     WORKSPACE_URL = "https://" + WORKSPACE_URL
-DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
 
+VECTOR_SEARCH_ENDPOINT = os.environ["VECTOR_SEARCH_ENDPOINT"]
+VECTOR_SEARCH_INDEX = os.environ["VECTOR_SEARCH_INDEX"]
+
+CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
+DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
 
 vs_client = VectorSearchClient(
     disable_notice=True,
